@@ -1,0 +1,7 @@
+optimize_images*.py
+gen_pages.py
+qa_shots/
+node_modules/
+tw-input.css
+.vercel
+.claude/settings.local.json

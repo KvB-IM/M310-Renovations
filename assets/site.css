@@ -1,0 +1,226 @@
+/* M310 Renovations — brand styles v2: Navy + Gold + Cream (supplements Tailwind) */
+:root{
+  --m310-navy:#1B2A4E;
+  --m310-navy-dark:#0F1B36;
+  --m310-navy-light:#2C4074;
+  --m310-gold:#B08D57;
+  --m310-gold-bright:#C9A66B;
+  --m310-gold-dark:#8B6F42;
+  --m310-gold-text:#7A6038;   /* AA-safe gold for small text on cream */
+  --m310-cream:#FAF7F0;
+  --m310-card:#FFFFFF;
+  --m310-warm:#3A3833;
+  --m310-muted:#6B6862;
+  --m310-divider:#E5DFD3;
+}
+
+html{scroll-behavior:smooth}
+body{
+  font-family:'Manrope','Inter',system-ui,sans-serif;
+  color:var(--m310-warm);
+  background:var(--m310-cream);
+  line-height:1.7;
+  -webkit-font-smoothing:antialiased;
+  overflow-x:hidden;
+}
+
+/* ---------- Typography: Fraunces serif display, Manrope body ---------- */
+h1,h2,h3{font-family:'Fraunces',Georgia,'Times New Roman',serif;color:inherit}
+.font-display{
+  font-family:'Fraunces',Georgia,'Times New Roman',serif;
+  font-weight:600;
+  font-variation-settings:'SOFT' 0,'WONK' 0,'opsz' 40;
+  letter-spacing:-0.015em;
+  text-transform:none;      /* overrides Tailwind .uppercase on display headings */
+  line-height:1.08;
+}
+.font-display.tracking-\[0\.14em\],.font-display.tracking-\[0\.16em\]{letter-spacing:-0.01em}
+.font-cond{
+  font-family:'Manrope','Inter',system-ui,sans-serif;
+  font-weight:600;
+  letter-spacing:.08em;
+}
+/* Key aspirational word in hero headlines */
+.accent-word{font-style:italic;font-variation-settings:'SOFT' 0,'WONK' 1,'opsz' 60;color:var(--m310-gold-bright)}
+.serif-num{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;letter-spacing:-0.02em}
+
+/* Wordmark */
+.wordmark{font-family:'Fraunces',Georgia,serif;font-weight:600;display:inline-block;line-height:1}
+
+/* ---------- Buttons ---------- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;
+  font-family:'Manrope','Inter',sans-serif;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase;border-radius:.25rem;
+  transition:transform .12s ease,background .18s ease,color .18s ease,box-shadow .18s ease;line-height:1}
+.btn:active{transform:translateY(1px)}
+/* Gold CTA uses navy ink, not cream: cream-on-gold is only 2.9:1 (fails WCAG AA).
+   Navy-on-gold is 5.5:1 and reads more premium. */
+.btn-gold{background:var(--m310-gold);color:var(--m310-navy-dark);box-shadow:0 8px 22px -12px rgba(27,42,78,.55)}
+.btn-gold:hover{background:var(--m310-gold-bright);color:var(--m310-navy-dark)}
+.btn-outline{background:transparent;color:var(--m310-cream);border:1.5px solid var(--m310-gold)}
+.btn-outline:hover{background:var(--m310-gold);color:var(--m310-navy-dark);border-color:var(--m310-gold)}
+/* Navy outline variant for use on light (cream) backgrounds. */
+.btn-outline-navy{background:transparent;color:var(--m310-navy);border:1.5px solid var(--m310-navy)}
+.btn-outline-navy:hover{background:var(--m310-navy);color:var(--m310-cream);border-color:var(--m310-navy)}
+.btn-dark{background:var(--m310-navy);color:var(--m310-cream)}
+.btn-dark:hover{background:var(--m310-navy-light)}
+
+/* Focus visibility (accessibility) */
+a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+  outline:3px solid var(--m310-gold);outline-offset:2px;border-radius:2px}
+
+/* ---------- Accents ---------- */
+.accent-tag{background:var(--m310-gold);color:var(--m310-navy-dark);
+  font-family:'Manrope',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.16em;
+  padding:.35rem 1rem;display:inline-block;border-radius:999px;font-size:.72rem}
+.accent-tag span{display:inline-block}
+
+.rule-gold{width:64px;height:2px;background:var(--m310-gold);border-radius:2px}
+
+/* Hero overlay gradient — navy, for legibility over property photos. Darker on left where text sits, nearly transparent on right so the property shows through. */
+.hero-overlay{background:linear-gradient(90deg,rgba(15,27,54,.68) 0%,rgba(15,27,54,.42) 40%,rgba(15,27,54,.10) 75%,rgba(15,27,54,0) 100%)}
+
+/* Cards */
+.svc-card{transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease}
+.svc-card:hover{transform:translateY(-4px);box-shadow:0 20px 44px -24px rgba(27,42,78,.42);border-color:var(--m310-gold)}
+.svc-card:hover .svc-img{transform:scale(1.04)}
+.svc-img{transition:transform .5s ease}
+
+/* Portfolio case-study card */
+.case-card{background:var(--m310-card);border:1px solid var(--m310-divider);border-radius:.75rem;
+  box-shadow:0 20px 50px -34px rgba(27,42,78,.45)}
+.uplift-num{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;
+  color:var(--m310-gold);letter-spacing:-0.02em;line-height:.95}
+
+/* Verify-on-Zillow link: navy text, gold underline that grows */
+.zillow-link{display:inline-flex;align-items:center;gap:.4rem;color:var(--m310-navy);
+  font-family:'Manrope',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.1em;
+  font-size:.8rem;padding-bottom:.3rem;position:relative}
+.zillow-link::after{content:"";position:absolute;left:0;bottom:0;height:2px;width:36px;
+  background:var(--m310-gold);transition:width .25s ease}
+.zillow-link:hover{color:var(--m310-gold-text)}
+.zillow-link:hover::after{width:100%}
+
+/* Sticky mobile CTA */
+#mobileCta{padding-bottom:env(safe-area-inset-bottom)}
+@media(min-width:768px){#mobileCta{display:none}}
+@media(max-width:767px){body{padding-bottom:64px}}
+
+/* Pill tags */
+.pill{display:inline-block;background:var(--m310-card);border:1px solid var(--m310-divider);color:var(--m310-navy);
+  font-family:'Manrope',sans-serif;font-weight:600;text-transform:uppercase;letter-spacing:.1em;
+  font-size:.72rem;padding:.45rem 1rem;border-radius:999px}
+
+/* Deep navy band (formerly clay band) */
+.clay-band{background:linear-gradient(160deg,var(--m310-navy) 0%,var(--m310-navy-dark) 100%)}
+
+/* Stat numbers sitting directly on cream need a slightly deeper gold for AA-large (3.6:1) */
+.stat-num{font-family:'Fraunces',Georgia,serif;font-style:italic;font-weight:600;
+  color:#A07C46;letter-spacing:-0.02em;line-height:1}
+
+/* Small-caps metadata */
+.meta{font-family:'Manrope',sans-serif;text-transform:uppercase;letter-spacing:.14em;
+  font-size:.72rem;color:var(--m310-muted);font-weight:600}
+
+@media(prefers-reduced-motion:reduce){
+  *{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+/* ============================================================
+   PORTFOLIO GALLERIES + LIGHTBOX (navy / gold / cream)
+   ============================================================ */
+
+/* Case-study hero — one wide landscape image at the top of each card */
+.pf-hero{position:relative;aspect-ratio:16/9;background:var(--m310-cream);overflow:hidden}
+.pf-hero>img{width:100%;height:100%;object-fit:cover;display:block}
+.pf-hero-flag{position:absolute;left:1rem;top:1rem;background:var(--m310-gold);color:var(--m310-navy-dark);
+  font-family:'Manrope',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.16em;
+  font-size:.68rem;padding:.4rem 1rem;border-radius:999px;
+  box-shadow:0 10px 24px -14px rgba(15,27,54,.9)}
+@media(min-width:768px){.pf-hero{aspect-ratio:3/1.35}.pf-hero-flag{left:1.6rem;top:1.6rem;font-size:.72rem}}
+
+/* Address block + uplift number side by side on desktop */
+.pf-head{display:grid;gap:1.25rem}
+@media(min-width:900px){
+  .pf-head{grid-template-columns:1.15fr .85fr;gap:2.5rem;align-items:start}
+  .pf-price{text-align:right}
+  .pf-price .border-t{border-top-color:var(--m310-divider)}
+}
+
+/* Thumbnail grid — 2 up on mobile, 3 on tablet, 4 on desktop */
+.pf-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.75rem;margin-top:2rem}
+@media(min-width:640px){.pf-gallery{grid-template-columns:repeat(3,minmax(0,1fr));gap:1rem}}
+@media(min-width:1024px){.pf-gallery{grid-template-columns:repeat(4,minmax(0,1fr))}}
+
+.pf-thumb{position:relative;display:block;width:100%;aspect-ratio:4/3;overflow:hidden;
+  border-radius:.5rem;border:1px solid var(--m310-divider);background:var(--m310-cream);
+  padding:0;cursor:zoom-in;isolation:isolate}
+.pf-thumb>img{width:100%;height:100%;object-fit:cover;display:block;
+  transition:transform .5s cubic-bezier(.22,.61,.36,1)}
+.pf-thumb-veil{position:absolute;inset:0;background:linear-gradient(180deg,rgba(176,141,87,0) 35%,rgba(176,141,87,.42) 100%);
+  opacity:0;transition:opacity .25s ease}
+.pf-thumb-icon{position:absolute;right:.5rem;bottom:.5rem;display:grid;place-items:center;
+  width:2rem;height:2rem;border-radius:999px;background:var(--m310-cream);color:var(--m310-navy);
+  opacity:0;transform:translateY(6px);transition:opacity .25s ease,transform .25s ease}
+.pf-thumb:hover>img,.pf-thumb:focus-visible>img{transform:scale(1.07)}
+.pf-thumb:hover .pf-thumb-veil,.pf-thumb:focus-visible .pf-thumb-veil{opacity:1}
+.pf-thumb:hover .pf-thumb-icon,.pf-thumb:focus-visible .pf-thumb-icon{opacity:1;transform:translateY(0)}
+.pf-thumb:hover{border-color:var(--m310-gold)}
+
+.pf-gallery-note{font-family:'Manrope',sans-serif;font-size:.75rem;line-height:1.7;
+  color:var(--m310-muted);margin-top:.85rem}
+
+/* Case-study CTA row */
+.pf-cta-row{display:flex;flex-wrap:wrap;align-items:center;gap:.75rem;margin-top:1.75rem}
+.pf-cta-primary{display:inline-flex;align-items:center;gap:.5rem;
+  font-family:'Manrope',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:.78rem;
+  color:var(--m310-navy);border:1.5px solid var(--m310-gold);border-radius:.25rem;padding:.85rem 1.4rem;
+  transition:background .2s ease,color .2s ease}
+.pf-cta-primary:hover{background:var(--m310-gold);color:var(--m310-navy-dark)}
+.pf-cta-secondary{display:inline-flex;align-items:center;gap:.5rem;
+  font-family:'Manrope',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.1em;font-size:.78rem;
+  color:var(--m310-gold-text);padding:.85rem .4rem;border-bottom:2px solid transparent;
+  transition:color .2s ease,border-color .2s ease}
+.pf-cta-secondary:hover{color:var(--m310-navy);border-bottom-color:var(--m310-gold)}
+
+/* ---------- Lightbox ---------- */
+.lb{position:fixed;inset:0;z-index:120;display:grid;
+  grid-template-columns:auto minmax(0,1fr) auto;grid-template-rows:auto minmax(0,1fr);
+  align-items:center;background:rgba(15,27,54,.92);
+  -webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px);padding:0 .5rem 1.25rem}
+.lb[hidden]{display:none}
+.lb-bar{grid-column:1/-1;grid-row:1;display:flex;align-items:center;gap:1rem;
+  padding:.9rem .75rem;border-bottom:1px solid rgba(176,141,87,.35);
+  background:var(--m310-navy-dark)}
+.lb-title{font-family:'Fraunces',Georgia,serif;font-weight:600;color:var(--m310-cream);
+  font-size:1rem;line-height:1.2;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lb-count{font-family:'Manrope',sans-serif;font-weight:700;text-transform:uppercase;letter-spacing:.16em;
+  font-size:.7rem;color:var(--m310-gold-bright);white-space:nowrap}
+.lb-close{width:2.6rem;height:2.6rem;border-radius:999px;background:var(--m310-cream);color:var(--m310-navy-dark);
+  font-size:1.6rem;line-height:1;display:grid;place-items:center;flex:none;
+  transition:background .2s ease,transform .12s ease}
+.lb-close:hover{background:var(--m310-gold-bright)}
+.lb-prev{grid-column:1;grid-row:2}
+.lb-next{grid-column:3;grid-row:2}
+.lb-nav{width:3rem;height:3rem;border-radius:999px;flex:none;display:grid;place-items:center;
+  background:rgba(176,141,87,.16);color:var(--m310-gold-bright);border:1.5px solid var(--m310-gold);
+  transition:background .2s ease,color .2s ease}
+.lb-nav:hover{background:var(--m310-gold);color:var(--m310-navy-dark)}
+.lb-figure{grid-column:2;grid-row:2;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.9rem;min-width:0;height:100%;padding:1rem .25rem 0}
+.lb-figure img{max-width:100%;max-height:72vh;width:auto;height:auto;object-fit:contain;
+  border-radius:.5rem;box-shadow:0 40px 90px -40px rgba(0,0,0,.85)}
+.lb-cap{font-family:'Manrope',sans-serif;font-size:.82rem;line-height:1.7;color:rgba(250,247,240,.82);
+  text-align:center;max-width:60ch}
+@media(max-width:640px){
+  .lb{grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr) auto;padding:0 .35rem 1rem}
+  .lb-bar{grid-column:1}
+  .lb-figure{grid-column:1;grid-row:2;padding:.75rem .25rem 0}
+  .lb-figure img{max-height:64vh}
+  .lb-prev,.lb-next{grid-row:3;grid-column:1;justify-self:center;margin-top:.75rem}
+  .lb-prev{transform:translateX(-2.6rem)}
+  .lb-next{transform:translateX(2.6rem)}
+  .lb-nav{width:2.9rem;height:2.9rem}
+  .lb-title{font-size:.9rem}
+}
+body.lb-open{overflow:hidden}
