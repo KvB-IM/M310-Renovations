@@ -205,7 +205,7 @@
           <h2 class="font-display text-4xl md:text-5xl uppercase leading-none">Request Your Free Estimate</h2>
           <p class="text-cream/85 mt-4">The more detail you give us, the more accurate the first number will be.</p>
         </div>
-        <!-- OWNER: Wire this to the Zoho CRM webhook (or Formspree/Basin). Same speed-to-lead workflow as M310 Land Works. -->
+        <!-- Posts to /api/lead: archived in Vercel Blob, emailed via Resend. -->
         <form data-lead-form action="/api/lead" method="post" class="bg-card text-navy rounded-xl p-6 md:p-8 mt-8 grid sm:grid-cols-2 gap-4 shadow-2xl">
           <input type="hidden" name="utm_source" value="" />
           <input type="hidden" name="utm_medium" value="" />
@@ -213,6 +213,11 @@
           <input type="hidden" name="utm_content" value="" />
           <input type="hidden" name="utm_term" value="" />
           <input type="hidden" name="brand" value="M310 Renovations" />
+          <input type="hidden" name="form_render_ts" value="" />
+          <!-- Honeypot. Hidden from people; bots fill it and get silently dropped. -->
+          <div class="hp-field" aria-hidden="true">
+            <input type="text" name="company_website" tabindex="-1" autocomplete="off" />
+          </div>
           <div>
             <label class="block font-cond uppercase text-xs tracking-wide mb-1" for="c_name">Full Name *</label>
             <input id="c_name" name="full_name" required class="w-full border border-divider rounded px-3 py-2.5" />
@@ -250,6 +255,7 @@
             <input id="c_consent" name="consent" type="checkbox" required class="mt-1 w-5 h-5" />
             <label for="c_consent" class="text-sm text-warm/80">I agree to be contacted by M310 Renovations about my project.</label>
           </div>
+          <p data-form-error role="alert" class="hidden form-error"></p>
           <div class="sm:col-span-2">
             <button type="submit" class="btn btn-gold w-full py-4 text-lg">Request My Free Estimate</button>
             <p class="text-center text-xs text-warm/60 mt-3">Or call us directly at <a href="tel:+18036341616" class="text-gold-text font-semibold" aria-label="Call M310 Renovations at 803-634-1616">(803) 634-1616</a></p>

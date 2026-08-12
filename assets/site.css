@@ -224,3 +224,10 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
   .lb-title{font-size:.9rem}
 }
 body.lb-open{overflow:hidden}
+
+/* --------------------------------------------------------------- LEAD FORM */
+/* Honeypot. Off-canvas, out of the tab order, hidden from assistive tech —
+   only a bot that parses the markup will ever put a value in it. */
+.hp-field{position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden}
+.form-error{grid-column:1/-1;font-family:'Manrope',sans-serif;font-size:.85rem;line-height:1.6;
+  color:#8c2f24;background:#fbecea;border:1px solid #e6bdb7;border-radius:.375rem;padding:.6rem .8rem}

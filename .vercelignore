@@ -1,7 +1,9 @@
 gen_pages.py
+fix_photo_alts.py
 __pycache__/
 qa_shots/
 swap_pixel.sh
 tailwind.config.js
 tw-input.css
+*.md
 .git/

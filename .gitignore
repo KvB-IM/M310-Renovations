@@ -4,4 +4,9 @@ qa_shots/
 node_modules/
 tw-input.css
 .vercel
+.env
+.env.local
+.env.*.local
+
+# Local Claude Code state — records literal command text, secrets included.
 .claude/settings.local.json

@@ -30,19 +30,72 @@
     });
   } catch (e) {}
 
-  // Lead form submit (preview: intercept, show success, fire fbq Lead)
+  // Lead form submit — POST actual lead data to /api/lead and show success UI.
   document.querySelectorAll('form[data-lead-form]').forEach(function (form) {
+    // Stamp when the form became available. The API compares this against
+    // arrival time; sub-two-second fills get flagged as likely bots.
+    var stamp = form.querySelector('input[name="form_render_ts"]');
+    if (stamp) { stamp.value = String(Date.now()); }
+
+    var sending = false;
+
     form.addEventListener('submit', function (e) {
       e.preventDefault();
+      if (sending) return;
+
       var success = form.parentElement.querySelector('[data-form-success]');
-      // In production this POSTs to /api/lead. For preview we simulate success.
-      // OWNER: wire to Zoho CRM webhook / Formspree / Basin — see M310_Zoho_SpeedToLead_Workflow.md
-      if (typeof fbq === 'function') { fbq('track', 'Lead'); }
-      form.classList.add('hidden');
-      if (success) {
-        success.classList.remove('hidden');
-        success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      var errorBox = form.querySelector('[data-form-error]');
+      var submitButton = form.querySelector('[type="submit"]');
+      var originalLabel = submitButton ? submitButton.textContent : '';
+
+      sending = true;
+      if (errorBox) { errorBox.classList.add('hidden'); }
+      if (submitButton) {
+        submitButton.disabled = true;
+        submitButton.textContent = 'Sending…';
       }
+
+      var payload = { page: window.location.pathname };
+      var formData = new FormData(form);
+      formData.forEach(function (value, key) {
+        payload[key] = value;
+      });
+
+      fetch(form.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          return res.json().catch(function () { return {}; }).then(function (data) {
+            if (!res.ok) throw new Error(data.error || 'Submission failed.');
+            return data;
+          });
+        })
+        .then(function () {
+          if (typeof fbq === 'function') { fbq('track', 'Lead'); }
+          form.classList.add('hidden');
+          if (success) {
+            success.classList.remove('hidden');
+            success.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        })
+        .catch(function (err) {
+          console.error('Lead submit error:', err);
+          if (errorBox) {
+            errorBox.textContent = err.message + ' You can also call (803) 634-1616.';
+            errorBox.classList.remove('hidden');
+          } else {
+            alert('Sorry, there was a problem sending your request. Please try again or call us directly.');
+          }
+        })
+        .finally(function () {
+          sending = false;
+          if (submitButton) {
+            submitButton.disabled = false;
+            submitButton.textContent = originalLabel;
+          }
+        });
     });
   });
 
