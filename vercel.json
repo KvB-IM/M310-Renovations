@@ -6,6 +6,13 @@
       "maxDuration": 15
     }
   },
+  "redirects": [
+    {
+      "source": "/:path((?!coming-soon|api/|assets/|favicon|robots).*)",
+      "destination": "/coming-soon.html",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
