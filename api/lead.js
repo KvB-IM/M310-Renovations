@@ -104,7 +104,7 @@ export default async function handler(req, res) {
       ip: header(req, 'x-forwarded-for')?.split(',')[0].trim() || null,
       country: header(req, 'x-vercel-ip-country') || null,
       region: header(req, 'x-vercel-ip-country-region') || null,
-      city: header(req, 'x-vercel-ip-city') || null,
+      city: geo(header(req, 'x-vercel-ip-city')) || null,
     },
     signals: {
       fillTimeMs: elapsedMs,
@@ -332,6 +332,17 @@ function bareHost(host) {
 function header(req, name) {
   const value = req.headers?.[name];
   return Array.isArray(value) ? value[0] : value || '';
+}
+
+// Vercel percent-encodes the geo headers, so "North Augusta" arrives as
+// "North%20Augusta" and would otherwise be stored that way.
+function geo(value) {
+  if (!value) return '';
+  try {
+    return decodeURIComponent(value);
+  } catch {
+    return value;
+  }
 }
 
 // Vercel's Node runtime pre-parses JSON bodies onto req.body, but that is not
