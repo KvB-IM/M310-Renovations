@@ -45,31 +45,30 @@ const LEAD_FIELDS = {
 
 const UTM_FIELDS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'];
 
-export default async function handler(request) {
-  if (request.method !== 'POST') {
-    return json({ error: 'Method not allowed.' }, 405, { Allow: 'POST' });
+export default async function handler(req, res) {
+  if (req.method !== 'POST') {
+    return json(res, { error: 'Method not allowed.' }, 405, { Allow: 'POST' });
   }
 
-  if (!isSameSite(request)) {
-    return json({ error: 'Forbidden.' }, 403);
+  if (!isSameSite(req)) {
+    return json(res, { error: 'Forbidden.' }, 403);
   }
 
   let body;
   try {
-    const raw = await request.text();
-    if (raw.length > MAX_BODY_BYTES) return json({ error: 'Payload too large.' }, 413);
-    body = raw ? JSON.parse(raw) : {};
-  } catch {
-    return json({ error: 'Invalid JSON body.' }, 400);
+    body = await readJsonBody(req);
+  } catch (err) {
+    if (err.code === 'BODY_TOO_LARGE') return json(res, { error: 'Payload too large.' }, 413);
+    return json(res, { error: 'Invalid JSON body.' }, 400);
   }
   if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    return json({ error: 'Invalid body.' }, 400);
+    return json(res, { error: 'Invalid body.' }, 400);
   }
 
   // Honeypot: a hidden input no sighted user or screen reader ever reaches.
   // Filled means bot. Answer 200 so the bot believes it succeeded and moves on.
   if (clean(body.company_website)) {
-    return json({ ok: true });
+    return json(res, { ok: true });
   }
 
   const lead = {};
@@ -83,7 +82,7 @@ export default async function handler(request) {
   if (!lead.phone) errors.push('phone');
   if (lead.email && !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(lead.email)) errors.push('email');
   if (errors.length) {
-    return json({ error: 'Please check the highlighted fields.', fields: errors }, 400);
+    return json(res, { error: 'Please check the highlighted fields.', fields: errors }, 400);
   }
 
   const now = new Date();
@@ -100,12 +99,12 @@ export default async function handler(request) {
     lead,
     utm,
     source: {
-      page: clean(body.page) || request.headers.get('referer') || null,
-      userAgent: request.headers.get('user-agent') || null,
-      ip: request.headers.get('x-forwarded-for')?.split(',')[0].trim() || null,
-      country: request.headers.get('x-vercel-ip-country') || null,
-      region: request.headers.get('x-vercel-ip-country-region') || null,
-      city: request.headers.get('x-vercel-ip-city') || null,
+      page: clean(body.page) || header(req, 'referer') || null,
+      userAgent: header(req, 'user-agent') || null,
+      ip: header(req, 'x-forwarded-for')?.split(',')[0].trim() || null,
+      country: header(req, 'x-vercel-ip-country') || null,
+      region: header(req, 'x-vercel-ip-country-region') || null,
+      city: header(req, 'x-vercel-ip-city') || null,
     },
     signals: {
       fillTimeMs: elapsedMs,
@@ -131,7 +130,7 @@ export default async function handler(request) {
   if (mailed.status === 'rejected') console.error('[lead] notification email failed:', mailed.reason);
 
   if (stored.status === 'rejected' && mailed.status === 'rejected') {
-    return json({ error: 'We could not save your request. Please call (803) 634-1616.' }, 502);
+    return json(res, { error: 'We could not save your request. Please call (803) 634-1616.' }, 502);
   }
 
   // Best-effort courtesy reply to the homeowner. Never allowed to fail the request.
@@ -143,7 +142,7 @@ export default async function handler(request) {
     }
   }
 
-  return json({
+  return json(res, {
     ok: true,
     id: record.id,
     stored: stored.status === 'fulfilled',
@@ -310,8 +309,8 @@ function blobPathname(now, name) {
 
 // Blocks cross-origin scripted POSTs. Requests with no Origin header (curl,
 // some privacy tooling) are allowed through — the honeypot handles those.
-function isSameSite(request) {
-  const origin = request.headers.get('origin');
+function isSameSite(req) {
+  const origin = header(req, 'origin');
   if (!origin) return true;
   let host;
   try {
@@ -319,18 +318,53 @@ function isSameSite(request) {
   } catch {
     return false;
   }
-  if (host === (request.headers.get('host') || '').toLowerCase()) return true;
+  // The apex redirects to www, so compare registrable host, not the exact one.
+  const self = (header(req, 'host') || '').toLowerCase();
+  if (bareHost(host) === bareHost(self)) return true;
   if (host.endsWith('.vercel.app')) return true;
   return ALLOWED_HOSTS.includes(host);
+}
+
+function bareHost(host) {
+  return host.replace(/^www\./, '');
+}
+
+function header(req, name) {
+  const value = req.headers?.[name];
+  return Array.isArray(value) ? value[0] : value || '';
+}
+
+// Vercel's Node runtime pre-parses JSON bodies onto req.body, but that is not
+// guaranteed for every content-type, so fall back to reading the stream.
+async function readJsonBody(req) {
+  if (req.body !== undefined && req.body !== null) {
+    if (typeof req.body === 'object') return req.body;
+    if (typeof req.body === 'string') return req.body ? JSON.parse(req.body) : {};
+  }
+
+  const chunks = [];
+  let size = 0;
+  for await (const chunk of req) {
+    size += chunk.length;
+    if (size > MAX_BODY_BYTES) {
+      const err = new Error('Body too large');
+      err.code = 'BODY_TOO_LARGE';
+      throw err;
+    }
+    chunks.push(chunk);
+  }
+  const raw = Buffer.concat(chunks).toString('utf8');
+  return raw ? JSON.parse(raw) : {};
 }
 
 function esc(value) {
   return String(value).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 }
 
-function json(payload, status = 200, headers = {}) {
-  return new Response(JSON.stringify(payload), {
-    status,
-    headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store', ...headers },
-  });
+function json(res, payload, status = 200, headers = {}) {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'no-store');
+  for (const [key, value] of Object.entries(headers)) res.setHeader(key, value);
+  res.end(JSON.stringify(payload));
 }

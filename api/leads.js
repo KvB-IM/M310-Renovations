@@ -10,6 +10,7 @@
 //   /api/leads?key=…&pathname=leads/…json  one full record
 
 import { timingSafeEqual } from 'node:crypto';
+import { Readable } from 'node:stream';
 import { get, list } from '@vercel/blob';
 
 const ADMIN_KEY = process.env.LEADS_ADMIN_KEY;
@@ -36,17 +37,17 @@ const CSV_COLUMNS = [
   ['id', (r) => r.id],
 ];
 
-export default async function handler(request) {
-  if (request.method !== 'GET') return text('Method not allowed', 405, { Allow: 'GET' });
-  if (!ADMIN_KEY) return text('Lead export is not configured.', 503);
+export default async function handler(req, res) {
+  if (req.method !== 'GET') return text(res, 'Method not allowed', 405, { Allow: 'GET' });
+  if (!ADMIN_KEY) return text(res, 'Lead export is not configured.', 503);
 
-  const { searchParams } = new URL(request.url);
-  const supplied =
-    (request.headers.get('authorization') || '').replace(/^Bearer\s+/i, '') || searchParams.get('key') || '';
-  if (!matches(supplied, ADMIN_KEY)) return text('Unauthorized', 401);
+  const { searchParams } = new URL(req.url, `https://${req.headers.host || 'local'}`);
+  const auth = req.headers.authorization || '';
+  const supplied = auth.replace(/^Bearer\s+/i, '') || searchParams.get('key') || '';
+  if (!matches(supplied, ADMIN_KEY)) return text(res, 'Unauthorized', 401);
 
   const pathname = searchParams.get('pathname');
-  if (pathname) return one(pathname);
+  if (pathname) return one(res, pathname);
 
   const prefix = searchParams.get('prefix') || 'leads/';
   const limit = clampInt(searchParams.get('limit'), 50, 1, 1000);
@@ -56,9 +57,9 @@ export default async function handler(request) {
   // puts the newest lead first.
   const blobs = [...listing.blobs].reverse();
 
-  if (searchParams.get('format') === 'csv') return csv(blobs.slice(0, MAX_CSV_ROWS));
+  if (searchParams.get('format') === 'csv') return csv(res, blobs.slice(0, MAX_CSV_ROWS));
 
-  return json({
+  return json(res, {
     count: blobs.length,
     hasMore: listing.hasMore,
     cursor: listing.cursor ?? null,
@@ -70,21 +71,20 @@ export default async function handler(request) {
   });
 }
 
-async function one(pathname) {
-  if (!pathname.startsWith('leads/')) return text('Not found', 404);
+async function one(res, pathname) {
+  if (!pathname.startsWith('leads/')) return text(res, 'Not found', 404);
   const result = await get(pathname, { access: BLOB_ACCESS });
-  if (!result || result.statusCode !== 200) return text('Not found', 404);
-  return new Response(result.stream, {
-    headers: {
-      'Content-Type': 'application/json',
-      'X-Content-Type-Options': 'nosniff',
-      'Cache-Control': 'private, no-store',
-      'X-Robots-Tag': 'noindex',
-    },
-  });
+  if (!result || result.statusCode !== 200) return text(res, 'Not found', 404);
+
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('X-Robots-Tag', 'noindex');
+  Readable.fromWeb(result.stream).pipe(res);
 }
 
-async function csv(blobs) {
+async function csv(res, blobs) {
   const records = [];
   for (let i = 0; i < blobs.length; i += CSV_FETCH_CONCURRENCY) {
     const batch = await Promise.all(
@@ -106,14 +106,12 @@ async function csv(blobs) {
     rows.push(CSV_COLUMNS.map(([, read]) => cell(read(record))).join(','));
   }
 
-  return new Response(rows.join('\r\n'), {
-    headers: {
-      'Content-Type': 'text/csv; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="m310-leads.csv"',
-      'Cache-Control': 'private, no-store',
-      'X-Robots-Tag': 'noindex',
-    },
-  });
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="m310-leads.csv"');
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('X-Robots-Tag', 'noindex');
+  res.end(rows.join('\r\n'));
 }
 
 function cell(value) {
@@ -135,20 +133,19 @@ function clampInt(raw, fallback, min, max) {
   return Number.isFinite(n) ? Math.min(Math.max(n, min), max) : fallback;
 }
 
-function json(payload, status = 200) {
-  return new Response(JSON.stringify(payload, null, 2), {
-    status,
-    headers: {
-      'Content-Type': 'application/json',
-      'Cache-Control': 'private, no-store',
-      'X-Robots-Tag': 'noindex',
-    },
-  });
+function json(res, payload, status = 200) {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Cache-Control', 'private, no-store');
+  res.setHeader('X-Robots-Tag', 'noindex');
+  res.end(JSON.stringify(payload, null, 2));
 }
 
-function text(message, status, headers = {}) {
-  return new Response(message, {
-    status,
-    headers: { 'Content-Type': 'text/plain', 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex', ...headers },
-  });
+function text(res, message, status, headers = {}) {
+  res.statusCode = status;
+  res.setHeader('Content-Type', 'text/plain');
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('X-Robots-Tag', 'noindex');
+  for (const [key, value] of Object.entries(headers)) res.setHeader(key, value);
+  res.end(message);
 }
