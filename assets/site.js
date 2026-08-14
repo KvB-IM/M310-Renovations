@@ -88,7 +88,7 @@
             try { window.turnstile.reset(widget); } catch (e) {}
           }
           if (errorBox) {
-            errorBox.textContent = err.message + ' You can also call (803) 634-1616.';
+            errorBox.textContent = err.message + ' You can also call (803) 989-0031.';
             errorBox.classList.remove('hidden');
           } else {
             alert('Sorry, there was a problem sending your request. Please try again or call us directly.');

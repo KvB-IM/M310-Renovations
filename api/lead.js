@@ -142,7 +142,7 @@ export default async function handler(req, res) {
   if (mailed.status === 'rejected') console.error('[lead] notification email failed:', mailed.reason);
 
   if (stored.status === 'rejected' && mailed.status === 'rejected') {
-    return json(res, { error: 'We could not save your request. Please call (803) 634-1616.' }, 502);
+    return json(res, { error: 'We could not save your request. Please call (803) 989-0031.' }, 502);
   }
 
   // Best-effort courtesy reply to the homeowner. Never allowed to fail the request.
@@ -285,13 +285,13 @@ async function sendAutoReply(lead) {
         `Hi ${firstName},\n\n` +
         'Thanks for reaching out to M310 Renovations. We have your request and someone from our ' +
         'team will call you shortly to schedule your free estimate.\n\n' +
-        'Need us sooner? Call (803) 634-1616.\n\n' +
+        'Need us sooner? Call (803) 989-0031.\n\n' +
         'M310 Renovations\n332 Edgefield Rd, North Augusta, SC 29841\n',
       html:
         `<p>Hi ${esc(firstName)},</p>` +
         '<p>Thanks for reaching out to M310 Renovations. We have your request and someone from our ' +
         'team will call you shortly to schedule your free estimate.</p>' +
-        '<p>Need us sooner? Call <a href="tel:+18036341616">(803) 634-1616</a>.</p>' +
+        '<p>Need us sooner? Call <a href="tel:+18039890031">(803) 989-0031</a>.</p>' +
         '<p style="color:#666;font-size:13px">M310 Renovations<br>332 Edgefield Rd, North Augusta, SC 29841</p>',
     }),
   });
