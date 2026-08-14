@@ -82,6 +82,11 @@
         })
         .catch(function (err) {
           console.error('Lead submit error:', err);
+          // Turnstile tokens are single-use, so any retry needs a fresh one.
+          var widget = form.querySelector('.cf-turnstile');
+          if (widget && window.turnstile) {
+            try { window.turnstile.reset(widget); } catch (e) {}
+          }
           if (errorBox) {
             errorBox.textContent = err.message + ' You can also call (803) 634-1616.';
             errorBox.classList.remove('hidden');

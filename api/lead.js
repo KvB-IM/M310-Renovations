@@ -11,6 +11,9 @@
 import { put } from '@vercel/blob';
 
 const RESEND_ENDPOINT = 'https://api.resend.com/emails';
+const TURNSTILE_ENDPOINT = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
+
+const TURNSTILE_SECRET = process.env.TURNSTILE_SECRET_KEY;
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY;
 const LEAD_TO =
@@ -71,6 +74,13 @@ export default async function handler(req, res) {
     return json(res, { ok: true });
   }
 
+  // Cloudflare Turnstile. Unlike the honeypot this one answers honestly, so a
+  // real person who let the token expire is told to try again.
+  const challenge = await verifyTurnstile(body['cf-turnstile-response'], req);
+  if (!challenge.ok) {
+    return json(res, { error: challenge.message, turnstile: true }, 403);
+  }
+
   const lead = {};
   for (const key of Object.keys(LEAD_FIELDS)) {
     const value = clean(body[key]);
@@ -110,6 +120,8 @@ export default async function handler(req, res) {
       fillTimeMs: elapsedMs,
       // Not a verdict, just a note in the record so you can spot a spam wave later.
       suspectedBot: elapsedMs !== null && elapsedMs < MIN_FILL_MS,
+      turnstile: challenge.skipped ? 'skipped' : 'passed',
+      challengeAt: challenge.challengeAt || null,
     },
   };
 
@@ -148,6 +160,57 @@ export default async function handler(req, res) {
     stored: stored.status === 'fulfilled',
     notified: mailed.status === 'fulfilled',
   });
+}
+
+/* -------------------------------------------------------------- turnstile */
+
+// Returns {ok, message}. When no secret is configured the check is skipped
+// rather than failing shut — a missing env var should not silently swallow
+// every lead. Once the secret is set, a bad token is always rejected.
+async function verifyTurnstile(token, req) {
+  if (!TURNSTILE_SECRET) {
+    console.warn('[lead] TURNSTILE_SECRET_KEY is not set — skipping bot check.');
+    return { ok: true, skipped: true };
+  }
+
+  if (!token) {
+    return { ok: false, message: 'Please complete the "I am human" check and try again.' };
+  }
+
+  const form = new URLSearchParams({ secret: TURNSTILE_SECRET, response: String(token) });
+  const ip = header(req, 'x-forwarded-for')?.split(',')[0].trim();
+  if (ip) form.set('remoteip', ip);
+
+  let result;
+  try {
+    const response = await fetch(TURNSTILE_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: form,
+    });
+    result = await response.json();
+  } catch (err) {
+    // Cloudflare unreachable. Let the lead through rather than lose it; the
+    // honeypot and timing signals still apply.
+    console.error('[lead] Turnstile verification unreachable:', err);
+    return { ok: true, skipped: true };
+  }
+
+  if (result.success) {
+    return { ok: true, hostname: result.hostname, challengeAt: result.challenge_ts };
+  }
+
+  const codes = result['error-codes'] || [];
+  console.warn('[lead] Turnstile rejected a submission:', codes.join(', '));
+  // Expired or already-used tokens are the common case for real people who
+  // left the tab open, and they just need a fresh challenge.
+  const stale = codes.includes('timeout-or-duplicate');
+  return {
+    ok: false,
+    message: stale
+      ? 'That security check expired. Please try again.'
+      : 'We could not verify that you are human. Please try again.',
+  };
 }
 
 /* ------------------------------------------------------------------ email */

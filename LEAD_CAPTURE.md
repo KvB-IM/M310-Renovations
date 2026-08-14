@@ -58,6 +58,7 @@ required ones are:
 | `LEAD_FROM_EMAIL` | `M310 Renovations <leads@m310renovations.com>` — must be the verified domain |
 | `BLOB_ACCESS` | `private` (match how you created the store) |
 | `LEADS_ADMIN_KEY` | long random string, only if you want the export endpoint |
+| `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile secret; without it the bot check is skipped |
 
 > **Both recipients require a verified domain.** Until then Resend refuses the
 > whole send — not just the second address — with a 403. Keep `LEAD_TO_EMAIL` at
@@ -89,6 +90,22 @@ separate index.
 
 ## Spam handling
 
+Five layers. The honeypot runs before Turnstile so obvious bots never cost a
+verification call.
+
+- **Cloudflare Turnstile** — an invisible challenge on every form. The site key
+  is public and sits in the markup; the secret goes in `TURNSTILE_SECRET_KEY`
+  and is verified server-side against Cloudflare before anything is stored.
+  A failed or missing token is rejected with `403`.
+
+  Two deliberate fail-open cases, both so a configuration problem can never
+  silently swallow leads: if `TURNSTILE_SECRET_KEY` is unset the check is
+  skipped (with a warning in the logs), and if Cloudflare itself is unreachable
+  the submission proceeds. Every stored record notes which happened under
+  `signals.turnstile`.
+
+  Tokens are single-use and expire after five minutes, so the widget is reset
+  on any failed submission and the visitor gets a fresh one.
 - **Honeypot** — a `company_website` field positioned off-canvas and hidden from
   assistive tech. Anything that fills it gets a `200 OK` and is silently dropped,
   so the bot never learns it was caught.
@@ -99,8 +116,8 @@ separate index.
 - **Field allowlist** — only the known form fields are persisted, capped at 5,000
   characters each and 32 KB per request.
 
-If spam ever gets through at volume, add [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/)
-— a free invisible check, verified with one more `fetch` in the handler.
+If spam still gets through, tighten the Turnstile widget mode in the Cloudflare
+dashboard (Managed → Interactive) — no code change needed.
 
 ## Local development
 
